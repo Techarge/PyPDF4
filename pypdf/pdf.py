@@ -526,7 +526,7 @@ class PdfFileWriter(object):
             if callable(afterPageAppend):
                 afterPageAppend(writerPage)
 
-    def updatePageFormFieldValues(self, page, fields):
+    def updatePageFormFieldValues(self, page, fields, read_only = False):
         """
         Update the form field values for a given page from a fields dictionary.
         Copy field texts and values from fields to page.
@@ -545,6 +545,24 @@ class PdfFileWriter(object):
                     writer_annot.update(
                         {NameObject("/V"): TextStringObject(fields[field])}
                     )
+                    if read_only:
+                        writer_annot.update({NameObject("/Ff"): NumberObject(1)})
+
+    def have_viewer_render_fields(self):
+        """
+        Some PDF viewers need to be coaxed into rendering field values.
+        This does so by setting a `/NeedAppearances` attribute to True
+        (which adds to the processing time slightly).
+        Credit for figuring this out: https://stackoverflow.com/users/8382028/viatech
+        """
+        try:
+            catalog = self._rootObject
+            if "/AcroForm" not in catalog:
+                self._rootObject.update({NameObject("/AcroForm"): IndirectObject(len(self._objects), 0, self)})
+            need_appearances = NameObject("/NeedAppearances")
+            self._rootObject["/AcroForm"][need_appearances] = BooleanObject(True)
+        except Exception as e:
+            warnings.warn("Unable to set the /NeedAppearances flag. Filled-in field values may not render correctly. [{}]".format(repr(e)))
 
     def cloneReaderDocumentRoot(self, reader):
         """

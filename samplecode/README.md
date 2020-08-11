@@ -8,7 +8,7 @@ run, e.g.:
 ```
 python2 ./samplecode/basic_features.py
 python3 ./samplecode/basic_features.py
-``` 
+```
 
 ## `basic_features.py`
 
@@ -25,6 +25,13 @@ Sample code that demonstrates:
 Sample code that demonstrates merging together three PDFs into one, picking and choosing which pages appear in which order.
 Selected pages can be added to the end of the output PDF being built, or inserted in the middle.
 
+
+## `fillable_fields.py`
+
+Sample code that copies a PDF, changing field values along the way (i.e. using
+a PDF with fillable fields as a template).
+
+FYI: The fillable_form.pdf used in this demo was created via LibreOffice.
 
 
 ## Contributing to `samplecode`

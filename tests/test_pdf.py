@@ -10,6 +10,7 @@ hint on how to do this).
 import binascii
 from io import BytesIO
 import os
+from os import remove
 from os.path import abspath, basename, dirname, join, pardir
 import sys
 import tempfile
@@ -438,6 +439,48 @@ class PdfReaderTestCases(unittest.TestCase):
                 "%s.%s() is not callable" % (PdfFileReader.__name__, m),
             )
 
+    def testUpdatePageFormFieldValues(self):
+        """
+        """
+
+        testfile_handle, testfile_name = tempfile.mkstemp()
+
+        field_values = {
+            "employee_name": "John Hardworker",
+            "employee_id": "0123",
+            "department": "Human Resources",
+            "manager_name": "Doris Stickler",
+            "manager_id": "0072"
+        }
+        try:
+            # copy fillable_fields.pdf, filling in the fields along the way
+            with PdfFileReader(join(TEST_DATA_ROOT, "testUpdatePageFormFieldValues/fillable_form.pdf")) as reader:
+                with PdfFileWriter(testfile_name) as writer:
+                    writer.have_viewer_render_fields()
+                    template_page = reader.getPage(0)
+                    writer.addPage(template_page)
+                    page = writer.getPage(0)
+                    writer.updatePageFormFieldValues(page, field_values, read_only=True)
+                    writer.write()
+
+            # check the results by depleating entries from field_values_sought
+            # until it's empty
+            field_values_sought = field_values
+            with PdfFileReader(testfile_name) as pdf:
+                # For caching _cachedObjects data
+                for page_no in range(pdf.numPages):
+                    for j in range(len(page["/Annots"])):
+                        annotation = page["/Annots"][j].getObject()
+                        if (field := annotation.get("/T")):
+                            if (field_values_sought[field] == annotation.get("/V")
+                                and (annotation.get("/Ff") == 1)):
+                                field_values_sought.pop(field)
+
+            self.assertEqual(len(field_values_sought),0)
+        finally:
+            os.close(testfile_handle)
+            os.remove(testfile_name)
+
     def testAddAttachment(self):
         """
         Tests the addAttachment function for attaching a single file.
@@ -447,12 +490,12 @@ class PdfReaderTestCases(unittest.TestCase):
         to check for two entries per attached file.
         """
 
-        _, testfile = tempfile.mkstemp()
+        testfile_handle, testfile_name = tempfile.mkstemp()
 
         try:
             # Make PDF with attachment
             with PdfFileReader(join(TEST_DATA_ROOT, "jpeg.pdf")) as reader:
-                with PdfFileWriter(testfile) as writer:
+                with PdfFileWriter(testfile_name) as writer:
                     writer.appendPagesFromReader(reader)
                     with open(
                         join(  # pylint: disable=bad-continuation
@@ -465,7 +508,7 @@ class PdfReaderTestCases(unittest.TestCase):
                     writer.write()
 
             # Check for attachment entries
-            with PdfFileReader(testfile) as pdf:
+            with PdfFileReader(testfile_name) as pdf:
                 # For caching _cachedObjects data
                 pdf.numPages  # pylint: disable=pointless-statement
                 for _k, v in pdf._cachedObjects.items():
@@ -475,7 +518,8 @@ class PdfReaderTestCases(unittest.TestCase):
                             real = len(v["/Names"]["/EmbeddedFiles"]["/Names"])
                             self.assertEqual(2, real)
         finally:
-            os.remove(testfile)
+            os.close(testfile_handle)
+            os.remove(testfile_name)
 
     def testAttachFiles(self):
         """
@@ -487,12 +531,12 @@ class PdfReaderTestCases(unittest.TestCase):
         """
 
         numAttachments = 3
-        _, testfile = tempfile.mkstemp()
+        testfile_handle, testfile_name = tempfile.mkstemp()
 
         try:
             # Make PDF with attachment
             with PdfFileReader(join(TEST_DATA_ROOT, "jpeg.pdf")) as reader:
-                with PdfFileWriter(testfile) as writer:
+                with PdfFileWriter(testfile_name) as writer:
                     writer.appendPagesFromReader(reader)
 
                     writer.attachFiles(
@@ -501,7 +545,7 @@ class PdfReaderTestCases(unittest.TestCase):
                     writer.write()
 
             # Check for attachment entries
-            with PdfFileReader(testfile) as pdf:
+            with PdfFileReader(testfile_name) as pdf:
                 # For caching _cachedObjects data
                 pdf.numPages  # pylint: disable=pointless-statement
                 for _k, v in pdf._cachedObjects.items():
@@ -511,7 +555,8 @@ class PdfReaderTestCases(unittest.TestCase):
                             real = len(v["/Names"]["/EmbeddedFiles"]["/Names"])
                             self.assertEqual(numAttachments * 2, real)
         finally:
-            os.remove(testfile)
+            os.close(testfile_handle)
+            os.remove(testfile_name)
 
 
 class AddJsTestCase(unittest.TestCase):
