@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 """
 Showcases basic features of PyPDF.
+
+* Getting metadata from a PDF.
+* Copying a PDF, one page at a time, and performing different operations on each page (resize, rotate, add a watermark).
+* Encrypting a PDF.
+* Adding javascript that runs when the PDF is opened.
 """
 from __future__ import print_function
 
