@@ -439,8 +439,45 @@ class PdfReaderTestCases(unittest.TestCase):
                 "%s.%s() is not callable" % (PdfFileReader.__name__, m),
             )
 
+    def testHave_viewer_render_fields(self):
+        """
+        Tests that PdfFileWriter.have_viewer_render_fields().
+        """
+
+        testfile_handle, testfile_name = tempfile.mkstemp()
+
+        field_values = {
+            "employee_name": "John Hardworker",
+            "employee_id": "0123",
+            "department": "Human Resources",
+            "manager_name": "Doris Stickler",
+            "manager_id": "0072"
+        }
+        try:
+            # copy fillable_fields.pdf, filling in the fields along the way
+            with PdfFileReader(join(TEST_DATA_ROOT, "testUpdatePageFormFieldValues/fillable_form.pdf")) as reader:
+                with PdfFileWriter(testfile_name) as writer:
+                    writer.have_viewer_render_fields()
+                    template_page = reader.getPage(0)
+                    writer.addPage(template_page)
+                    writer.write()
+
+            # check the results by depleating entries from field_values_sought
+            # until it's empty
+            field_values_sought = field_values
+            with PdfFileReader(testfile_name) as pdf:
+                catalog = pdf._trailer["/Root"].getObject()
+                self.assertTrue("/AcroForm" in catalog)
+                self.assertTrue("/NeedAppearances" in catalog["/AcroForm"])
+
+        finally:
+            os.close(testfile_handle)
+            os.remove(testfile_name)
+
     def testUpdatePageFormFieldValues(self):
         """
+        Tests that PdfFileWriter.updatePageFormFieldValues() populates fields
+        (annotations) with corresponding values.
         """
 
         testfile_handle, testfile_name = tempfile.mkstemp()
@@ -469,6 +506,7 @@ class PdfReaderTestCases(unittest.TestCase):
             with PdfFileReader(testfile_name) as pdf:
                 # For caching _cachedObjects data
                 for page_no in range(pdf.numPages):
+                    page = pdf.getPage(0)
                     for j in range(len(page["/Annots"])):
                         annotation = page["/Annots"][j].getObject()
                         if (field := annotation.get("/T")):
