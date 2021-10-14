@@ -38,7 +38,7 @@ setup(
         author_email="biziqe@mathieu.fenniak.net",
         maintainer="Phaseit, Inc.",
         maintainer_email="PyPDF4@phaseit.net",
-        url="http://claird.github.com/PyPDF4",
+        url="https://github.com/Techarge/PyPDF4",
         classifiers = [
             "Development Status :: 5 - Production/Stable",
             "Intended Audience :: Developers",
