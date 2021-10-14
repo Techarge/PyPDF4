@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-Merges three PDF documents input from the command line.
+Sample code that demonstrates merging together three PDFs into one, picking and choosing which pages appear in which order.
+Selected pages can be added to the end of the output PDF being built, or inserted in the middle.
+This example takes input from the command line.
 """
 from __future__ import print_function
 
